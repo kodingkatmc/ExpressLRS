@@ -22,6 +22,7 @@
 #include "rx-serial/SerialSUMD.h"
 #include "rx-serial/SerialAirPort.h"
 #include "rx-serial/SerialHoTT_TLM.h"
+#include "rx-serial/SerialKISS_TLM.h"
 #include "rx-serial/SerialMavlink.h"
 #include "rx-serial/SerialTramp.h"
 #include "rx-serial/SerialSmartAudio.h"
@@ -1251,6 +1252,7 @@ static void setupSerial()
 	bool sumdSerialOutput = false;
     bool mavlinkSerialOutput = false;
     bool hottTlmSerial = false;
+    bool kissTlmSerial = false;
 
     if (OPT_CRSF_RCVR_NO_SERIAL)
     {
@@ -1298,6 +1300,11 @@ static void setupSerial()
         hottTlmSerial = true;
         serialBaud = 19200;
     }
+    else if (config.GetSerialProtocol() == PROTOCOL_KISS_TLM)
+    {
+        kissTlmSerial = true;
+        serialBaud = 115200;
+    }
     else if (config.GetSerialProtocol() == PROTOCOL_GPS)
     {
         serialBaud = 115200;
@@ -1315,6 +1322,10 @@ static void setupSerial()
     {
         serialConfig = SERIAL_8N2;
     }
+    else if(kissTlmSerial)
+    {
+        serialConfig = SERIAL_8N1;
+    }
 
     SerialMode mode = (sbusSerialOutput || sumdSerialOutput)  ? SERIAL_TX_ONLY : SERIAL_FULL;
     Serial.begin(serialBaud, serialConfig, mode, -1, invert);
@@ -1328,6 +1339,10 @@ static void setupSerial()
     else if(hottTlmSerial)
     {
         serialConfig = SERIAL_8N2;
+    }
+    else if(kissTlmSerial)
+    {
+        serialConfig = SERIAL_8N1;
     }
 
     // ARDUINO_CORE_INVERT_FIX PT2
@@ -1369,6 +1384,10 @@ static void setupSerial()
     else if (hottTlmSerial)
     {
         serialIO = new SerialHoTT_TLM(SERIAL_PROTOCOL_TX, SERIAL_PROTOCOL_RX);
+    }
+    else if (kissTlmSerial)
+    {
+        serialIO = new SerialKISS_TLM(SERIAL_PROTOCOL_TX, SERIAL_PROTOCOL_RX);
     }
     else
     {
@@ -1453,6 +1472,10 @@ static void setupSerial1()
         case PROTOCOL_SERIAL1_HOTT_TLM:
             Serial1.begin(19200, SERIAL_8N2, serial1RXpin, serial1TXpin, false);
             serial1IO = new SerialHoTT_TLM(SERIAL1_PROTOCOL_TX, SERIAL1_PROTOCOL_RX, serial1TXpin);
+            break;
+        case PROTOCOL_SERIAL1_KISS_TLM:
+            Serial1.begin(115200, SERIAL_8N1, serial1RXpin, serial1TXpin, false);
+            serial1IO = new SerialKISS_TLM(SERIAL1_PROTOCOL_TX, SERIAL1_PROTOCOL_RX);
             break;
         case PROTOCOL_SERIAL1_TRAMP:
             Serial1.begin(9600, SERIAL_8N1, UNDEF_PIN, serial1TXpin, false);
